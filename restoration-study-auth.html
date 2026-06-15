@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restoration — A 12-Week Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Lora',Georgia,serif;background:#F2EDE6;color:#3D2B1F;min-height:100vh}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif}
+
+/* AUTH SCREEN */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:#3D2B1F}
+.auth-card{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.auth-logo{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:#3D2B1F;margin-bottom:4px}
+.auth-logo span{color:#B8860B;font-style:italic}
+.auth-tagline{font-size:.8rem;color:#9A8570;font-style:italic;margin-bottom:28px}
+.auth-title{font-size:1.4rem;font-weight:700;color:#3D2B1F;margin-bottom:20px;font-family:'Cormorant Garamond',serif}
+.auth-input{width:100%;padding:12px 14px;border:1px solid #D5C9B8;border-radius:10px;font-family:'Lora',serif;font-size:.9rem;color:#3D2B1F;background:#FAF7F2;margin-bottom:12px;outline:none;transition:border-color .2s}
+.auth-input:focus{border-color:#B8860B;box-shadow:0 0 0 3px rgba(184,134,11,.1)}
+.auth-btn{width:100%;padding:13px;background:#3D2B1F;color:#fff;border:none;border-radius:10px;font-family:'Lora',serif;font-weight:600;font-size:.9rem;cursor:pointer;transition:background .2s;margin-top:4px}
+.auth-btn:hover{background:#2D1F15}
+.auth-btn:disabled{background:#9A8570;cursor:not-allowed}
+.auth-switch{text-align:center;margin-top:16px;font-size:.82rem;color:#9A8570}
+.auth-switch a{color:#B8860B;cursor:pointer;font-weight:600}
+.auth-error{background:#FFF0F0;border:1px solid #FFB0B0;border-radius:8px;padding:10px 14px;font-size:.82rem;color:#C0392B;margin-bottom:12px;display:none}
+.auth-success{background:#F0FFF4;border:1px solid #B0FFB0;border-radius:8px;padding:10px 14px;font-size:.82rem;color:#27AE60;margin-bottom:12px;display:none}
+.auth-divider{border-top:1px solid #E8E0D8;margin:20px 0}
+
+/* MAIN STUDY */
+#study-screen{display:none;min-height:100vh}
+#hdr{background:#3D2B1F;color:#fff;padding:14px 18px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.hdr-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#hdr h1{font-size:1.7rem;margin-bottom:1px}
+#hdr p{color:#BFB09A;font-size:.72rem;font-style:italic}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.save-st{font-size:.7rem;font-style:italic;color:#9A8570}
+.save-st.saving{color:#B8860B}
+.save-st.saved{color:#4CAF50}
+.save-st.error{color:#E74C3C}
+.user-info{font-size:.72rem;color:#9A8570;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.signout-btn{padding:5px 12px;background:transparent;border:1px solid #5A4535;color:#9A8570;border-radius:7px;cursor:pointer;font-family:'Lora',serif;font-size:.7rem;transition:all .2s}
+.signout-btn:hover{border-color:#9A8570;color:#C0A882}
+.exp-btn{padding:5px 12px;background:transparent;border:1px solid #5A4535;color:#9A8570;border-radius:7px;cursor:pointer;font-family:'Lora',serif;font-size:.7rem;transition:all .2s}
+.exp-btn:hover{border-color:#9A8570;color:#C0A882}
+#wnav{background:#2D1F15;padding:8px 14px;overflow-x:auto;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.mlbl{color:#7A6552;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding-right:3px;flex-shrink:0}
+.wbtn{width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;font-family:'Lora',serif;font-weight:600;font-size:.8rem;transition:all .2s;flex-shrink:0;position:relative;background:#4A3525;color:#C0A882}
+.wbtn:hover{background:#5A4535}
+.wbtn.active{background:#B8860B;color:#3D2B1F}
+.wdot{position:absolute;top:-1px;right:-1px;width:9px;height:9px;background:#4CAF50;border-radius:50%;border:2px solid #2D1F15}
+#exp-panel{background:#2D1F15;color:#C0A882;padding:12px 16px;display:none}
+#exp-panel p{font-size:.78rem;margin-bottom:6px}
+#exp-ta{width:100%;height:90px;background:#1A1008;color:#D0C0A0;border:1px solid #4A3525;border-radius:7px;padding:8px;font-size:.72rem;font-family:monospace;resize:none}
+.ep-row{display:flex;gap:8px;margin-top:6px}
+.ep-btn{padding:5px 13px;border-radius:7px;border:none;cursor:pointer;font-size:.75rem;font-family:'Lora',serif;font-weight:600}
+#content{max-width:680px;margin:0 auto;padding:14px}
+.wcard{border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.wch{padding:18px;color:#fff}
+.wch .mtag{font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;opacity:.7;margin-bottom:3px}
+.wch h2{font-size:1.85rem;margin-bottom:2px}
+.wch .wsub{font-style:italic;opacity:.8;font-size:.88rem}
+.wcb{background:#fff;padding:14px}
+.scr{font-size:.83rem;margin-bottom:7px}
+.thm{font-style:italic;font-size:.83rem;color:#7A6552;padding-top:9px;border-top:1px solid #D5C9B8}
+.tabs{display:flex;gap:4px;background:#E8E0D8;border-radius:11px;padding:3px;margin-bottom:14px}
+.tbtn{flex:1;padding:7px 3px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:.78rem;font-weight:600;color:#7A6552;transition:all .2s}
+.tbtn.active{background:#fff;color:#3D2B1F;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;padding:0 1px}
+.dlst{display:flex;flex-direction:column;gap:7px}
+.ditem{border-radius:11px;border:1px solid #E0D8CE;background:#fff;overflow:hidden}
+.dhdr{width:100%;display:flex;align-items:center;gap:11px;padding:13px 15px;border:none;background:transparent;cursor:pointer;text-align:left;transition:background .15s}
+.dhdr:hover{background:#FAF7F2}
+.dnum{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0;background:#F0EBE3;color:#7A6552;transition:all .2s}
+.dtitle{flex:1}
+.dtitle strong{display:block;font-size:.88rem;color:#3D2B1F}
+.dtitle span{font-size:.72rem;color:#7A6552}
+.dprg{font-size:.72rem;font-weight:600;color:#4CAF50}
+.chv{color:#B0A090;font-size:.78rem;transition:transform .2s}
+.chv.open{transform:rotate(180deg)}
+.dbody{padding:0 15px 15px;border-top:1px solid #F0EBE3}
+.vtag{margin:0 -15px 12px;padding:6px 15px;font-size:.72rem;font-weight:600}
+.qblk{margin-bottom:14px}
+.qrow{display:flex;gap:9px;margin-bottom:7px}
+.qnum{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.67rem;font-weight:700;flex-shrink:0;margin-top:2px}
+.qrow p{font-size:.86rem;line-height:1.7;color:#3D2B1F}
+.abox{width:100%;min-height:86px;border:1px solid #D5C9B8;border-radius:9px;padding:9px 11px;font-family:'Lora',Georgia,serif;font-size:.86rem;line-height:1.6;color:#3D2B1F;background:#FAF7F2;resize:vertical;outline:none;transition:border-color .2s}
+.abox:focus{border-color:#B8860B;box-shadow:0 0 0 3px rgba(184,134,11,.1)}
+.d6note{margin-top:9px;padding:9px 11px;background:#F7F4F0;border-radius:7px;font-size:.73rem;color:#7A6552;font-style:italic;border-left:3px solid #D5C9B8}
+.ccard{background:#fff;border-radius:14px;border:1px solid #E0D8CE;overflow:hidden}
+.cchdr{padding:13px 15px;border-bottom:1px solid #F0EBE3}
+.cchdr p{font-size:.62rem;text-transform:uppercase;letter-spacing:.11em;font-weight:700;color:#7A6552;margin-bottom:2px}
+.cchdr strong{font-size:.93rem;color:#3D2B1F}
+.ccbody{padding:15px}
+.ccbody p{font-size:.86rem;line-height:1.8;color:#4A3525;margin-bottom:11px}
+.vcard{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #E0D8CE}
+.vchdr{padding:15px 18px;color:#fff}
+.vchdr p{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:3px}
+.vchdr h3{font-size:1.15rem;margin-bottom:1px}
+.vchdr span{font-size:.83rem;opacity:.8}
+.vcbody{padding:15px}
+.vcbody p{font-size:.86rem;line-height:1.7;color:#7A6552;margin-bottom:13px}
+.vlink{display:flex;align-items:center;gap:9px;padding:11px 15px;border-radius:11px;text-decoration:none;font-weight:600;font-size:.86rem;transition:opacity .2s}
+.vlink:hover{opacity:.8}
+.vtips{margin-top:11px;border-radius:9px;padding:11px 13px}
+.vtips p{font-size:.67rem;text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:5px}
+.vtips li{font-size:.78rem;line-height:1.6;color:#7A6552;margin-bottom:3px;list-style:none;padding-left:13px;position:relative}
+.vtips li::before{content:"•";position:absolute;left:0}
+.navrow{display:flex;gap:9px;margin-top:14px}
+.nbtn{flex:1;padding:12px;border-radius:11px;border:none;cursor:pointer;font-family:'Lora',serif;font-weight:600;font-size:.86rem;transition:all .2s}
+.nprev{background:#fff;border:1px solid #E0D8CE;color:#3D2B1F}
+.nprev:hover{background:#FAF7F2}
+.nnext{background:#3D2B1F;color:#fff}
+.nnext:hover{background:#2D1F15}
+.ftag{text-align:center;padding:14px 0;border-top:1px solid #E0D8CE;margin-top:14px;font-size:.7rem;color:#9A8570;font-style:italic}
+.june .wch,.june .vchdr{background:linear-gradient(135deg,#6B4C2A,#8B6540)}
+.june .dnum.on{background:#8B6540;color:#fff}
+.june .qnum{background:#FDF3DC;color:#8B6540}
+.june .vtag{background:#FDF3DC;color:#6B4C2A}
+.june .vlink{background:#FDF3DC;color:#6B4C2A}
+.june .vtips{background:#FDF3DC}
+.july .wch,.july .vchdr{background:linear-gradient(135deg,#7A2A2A,#A04040)}
+.july .dnum.on{background:#A04040;color:#fff}
+.july .qnum{background:#FDF0F0;color:#A04040}
+.july .vtag{background:#FDF0F0;color:#7A2A2A}
+.july .vlink{background:#FDF0F0;color:#7A2A2A}
+.july .vtips{background:#FDF0F0}
+.august .wch,.august .vchdr{background:linear-gradient(135deg,#1E5C5C,#2A7A7A)}
+.august .dnum.on{background:#2A7A7A;color:#fff}
+.august .qnum{background:#EEF7F7;color:#2A7A7A}
+.august .vtag{background:#EEF7F7;color:#1E5C5C}
+.august .vlink{background:#EEF7F7;color:#1E5C5C}
+.august .vtips{background:#EEF7F7}
+#loading-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#3D2B1F;flex-direction:column;gap:16px}
+#loading-screen h2{color:#C0A882;font-family:'Cormorant Garamond',serif;font-size:2rem}
+#loading-screen p{color:#7A6552;font-size:.85rem;font-style:italic}
+.spinner{width:40px;height:40px;border:3px solid #5A4535;border-top-color:#B8860B;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <h2>Restoration</h2>
+  <p>Loading your study...</p>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-logo">Rooted <span>& Renewed</span></div>
+    <div class="auth-tagline">A 12-Week Study for the Parent in Waiting</div>
+    <div class="auth-divider"></div>
+    <div class="auth-title" id="auth-title">Sign in to your study</div>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-success" id="auth-success"></div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+    <input class="auth-input" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password"/>
+    <input class="auth-input" id="auth-pass2" type="password" placeholder="Confirm password" style="display:none" autocomplete="new-password"/>
+    <button class="auth-btn" id="auth-submit" onclick="handleAuth()">Sign In</button>
+    <div class="auth-switch" id="auth-switch">
+      New here? <a onclick="toggleAuthMode()">Create a free account</a>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #E8E0D8">
+      <p style="font-size:.75rem;color:#B0A090;text-align:center;font-style:italic;line-height:1.6">Your answers are private and saved securely to your account. No one else can see what you write.</p>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY SCREEN -->
+<div id="study-screen" style="display:none">
+  <div id="hdr">
+    <div class="hdr-inner">
+      <div>
+        <h1>Restoration</h1>
+        <p>12-Week Study &middot; Rooted & Renewed</p>
+      </div>
+      <div class="hdr-right">
+        <span class="save-st" id="save-st">Loading answers...</span>
+        <button class="exp-btn" onclick="toggleExp()">&#128203; Export</button>
+        <button class="signout-btn" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exp-panel">
+    <p>Tap inside the box, select all, copy and paste into Notes to keep a permanent backup.</p>
+    <textarea id="exp-ta" readonly></textarea>
+    <div class="ep-row">
+      <button class="ep-btn" onclick="selExp()" style="background:#B8860B;color:#3D2B1F">Select All</button>
+      <button class="ep-btn" onclick="toggleExp()" style="background:#4A3525;color:#C0A882">Close</button>
+    </div>
+  </div>
+
+  <div id="wnav"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+const WEEKS = [{"n": 1, "title": "Honest Before God", "sub": "The Starting Place of Restoration", "month": "june", "scripture": "Psalm 51:1-17", "theme": "Restoration begins with radical honesty — not where you wish you were, but where you actually are.", "video": {"title": "Psalms: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Psalms+Read+Scripture", "note": "A beautiful overview of how the Psalms hold together — lament, praise, and everything in between."}, "commentary": ["David wrote Psalm 51 in the wreckage of the worst season of his life. After Bathsheba. After Uriah. After months of denial and cover-up. What is remarkable is not just that he sinned — it is how he eventually came back. He did not minimize or bargain. He did not make a plan to do better. He opened his hands, showed God exactly what was there, and asked to be made clean.", "Restoration never begins with performance. It begins with presence — your actual presence, not a cleaned-up version standing before God. Many of us have learned to manage our spiritual image even before God. We pray about what we think we should be praying about rather than what is actually happening inside us.", "But He already knows. And He is waiting for us to know that He knows — and come anyway. This week is about one thing: being honest. Not fixing. Not resolving. Not making promises. Just honesty. If your heart is not right right now, that is actually the perfect starting place. The Psalms are full of people who told God the truth and found that honesty was the door, not the barrier.", "For the parent waiting at the window, this is especially true. You may have spent months or years managing how you appear — to your child, to your church, to yourself. This week, the invitation is simply to stop managing and start telling the truth. God can work with truth."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Psalm 51:1-6", "qs": ["Read Psalm 51:1-17 slowly, twice if you can. In your own words, what is David asking God to do? List every specific request he makes.", "What words and phrases does David use to describe his own condition? Write them all down. What does the variety of those words tell you?", "Who has David sinned against, according to verse 4? He clearly wronged real people, yet he says this to God. What does that tell you about where he believes the deepest wound lives?"]}, {"d": 2, "focus": "Understanding God's Character", "verse": "Psalm 51:1-2", "qs": ["David appeals to God's unfailing love and great compassion before he says anything about what he did. Why does he start there? What does that order tell you about how to approach God?", "Where does your picture of God land right now — as compassionate toward you in this season, or as disappointed? Be honest with yourself before you answer.", "What would it mean to genuinely believe that God wants to restore you, not just correct you? What makes that hard to receive?"]}, {"d": 3, "focus": "What God Values", "verse": "Psalm 51:13-17", "qs": ["The sacrifices of God are a broken spirit; a broken and contrite heart you, God, will not despise (v.17). God chooses brokenness over performance. How does that land differently than what you usually bring to Him?", "What is the difference between cleaning up behavior and receiving a new heart (v.10)? Which one do you tend to reach for when something in you is not right?", "David says if restored he will teach others and sinners will return to God (v.13). Restoration is never only personal — it has a direction outward. What stirs in you when you read that?"]}, {"d": 4, "focus": "Naming the Patterns", "verse": "Psalm 51:5-6", "qs": ["David identifies a deep bent — a pattern that predates his choices (v.5). Not an excuse, but an honest assessment. What default pattern do you recognize in yourself that tends to surface under pressure, loneliness, or pain?", "As a parent in waiting, what does walking on eggshells look like for you specifically? What are you usually protecting when you go into that mode?", "What would it look like to bring those patterns — not just the general idea of them, but the specific ones — openly before God? Not to fix them yet. Just to name them."]}, {"d": 5, "focus": "Inward Truth", "verse": "Psalm 51:6", "qs": ["Surely you desire truth in the inner parts; you teach me wisdom in the inmost place (v.6). What is the innermost place in you right now? What lives there that you have not put into words yet?", "Is there anything you are pretending is fine — before God, before others, or before yourself? What would it cost you to stop pretending?", "What is one honest sentence about where your heart is that you could say to God today without softening it or explaining it away?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Psalm 51:1", "qs": ["Write your own version of Psalm 51 — a short, honest prayer in your own words. Do not make it sound spiritual. Do not clean it up. Just talk to God about where you actually are.", "What do you most hope God does in you over these 12 weeks? Write it as a specific prayer — not a general one.", "What is one thing you noticed about yourself this week that you did not expect to see?"]}]}, {"n": 2, "title": "God Sees You Here", "sub": "He Meets You in the Wilderness", "month": "june", "scripture": "Genesis 16:1-14; 21:14-19", "theme": "God does not wait for you to find your way back. He comes to you where you are — even in the places you are ashamed to be.", "video": {"title": "Hagar: El Roi — The God Who Sees", "channel": "Various", "search": "Hagar+El+Roi+God+who+sees+Bible+teaching", "note": "Search Hagar El Roi God who sees for several strong teachings on this passage."}, "commentary": ["Hagar did not choose her situation. She was used, then blamed, then cast out — twice. She was not the center of the covenant story. She was a supporting character who kept getting pushed to the margins. And yet she is the first person in the Bible to give God a name: El Roi. The God who sees me.", "There is something important in that. She was not in the right place. She was not making right choices. She was alone in a desert with a dying child. And God showed up — not with a lecture, not with a list of what she had done wrong, but with water and a promise. He saw her in her exact location.", "For the parent waiting at the window, Hagar's story speaks directly. You may feel invisible — to your child, to your church, perhaps even to yourself. The grief of estrangement is disenfranchised grief. People do not always know what to say.", "El Roi is not silent. He is the God who sees you — not the version of you that has it together, not the version that has processed everything and arrived at peace, but the actual you, in the actual wilderness, on the actual day you are in right now."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Genesis 16:1-8", "qs": ["Read Genesis 16:1-14 and 21:14-19. What were the circumstances that drove Hagar into the wilderness each time? What is similar? What is different?", "In 16:8, the angel asks Hagar where she has come from and where she is going. He already knows. Why do you think the question is asked anyway?", "In 21:17, God hears the boy crying before Hagar even speaks. What does that tell you about how God responds to those who are suffering?"]}, {"d": 2, "focus": "El Roi — The God Who Sees", "verse": "Genesis 16:13-14", "qs": ["Hagar names God El Roi — the God who sees me. She is the first person in Scripture to name God. Why might that honor belong to a marginalized outsider? What does that tell you about who God pays attention to?", "Do you believe God sees you specifically — in your current situation, right now? Not God in general, but God with His attention on you. What makes that easy or hard to believe?", "What is the difference between believing God exists and believing God sees you personally? Where does your faith currently land on that spectrum?"]}, {"d": 3, "focus": "Shame and Hiddenness", "verse": "Genesis 21:15-16", "qs": ["Hagar placed her son under a bush and sat about a bowshot away because she could not bear to watch him die. She created distance because the pain was too much. Where are you managing pain by creating distance — from God, from others, from yourself?", "Is there a situation or feeling you have been putting under a bush and walking away from? What would it look like to let God see what is actually there?", "Shame often tells us our current location disqualifies us from God's attention. Is there a voice in you saying that right now? What does it sound like?"]}, {"d": 4, "focus": "Provision Already There", "verse": "Genesis 21:19", "qs": ["Then God opened her eyes and she saw a well of water (21:19). The well was already there. What does that suggest about what restoration sometimes looks like — not a miracle appearing but eyes being opened to what is already placed?", "Where might God have already placed provision or grace in your life that you have not yet been able to see? What would opened eyes look like for you right now?", "Hagar was also told to lift the boy up — she had to participate. What is one small act of participation God might be inviting you into, even if you do not have full strength yet?"]}, {"d": 5, "focus": "When You Feel Invisible", "verse": "Genesis 16:11", "qs": ["The name Ishmael means God hears. God named the child before he was born as a declaration that He was paying attention. Is there a part of your life where you have felt like God has not been listening? Name it directly.", "What would it change for you to genuinely believe that God hears not just your prayers but your unvoiced pain — the crying that does not have words yet?", "How does the Hagar story challenge any belief you carry that God's attention is conditional on your behavior or spiritual position?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Genesis 16:13", "qs": ["Write a letter to God as if you are Hagar — in a wilderness you did not choose, not sure He sees you, but willing to say something. Let it say what you would actually say if you were sure He was listening.", "What is your wilderness right now — the place, situation, or emotional state you most need God to show up in?", "Is there somewhere you have been waiting to get to a better place before you let God in? What would it mean to let Him in here, in this?"]}]}, {"n": 3, "title": "The Gift of Lament", "sub": "Giving Voice to What Hurts", "month": "june", "scripture": "Lamentations 3:1-33; Psalm 22:1-11", "theme": "Lament is not the absence of faith. It is faith honest enough to say what is actually happening.", "video": {"title": "Lament: The Language of Honest Prayer", "channel": "The Bible Project", "search": "Bible+Project+Lament+honest+prayer", "note": "The Bible Project has an excellent short video on lament as a biblical category. Search Bible Project Lament."}, "commentary": ["We live in a faith culture that is deeply uncomfortable with lament. We rush toward the silver lining. We quote Romans 8:28 before we have sat in the hard thing long enough to understand what the hard thing actually is. We treat grief as a failure of trust.", "But lament is one of the oldest and most robust forms of prayer in Scripture. Roughly a third of the Psalms are laments. The entire book of Lamentations is exactly what it sounds like. Even Jesus on the cross quoted Psalm 22 — My God, my God, why have you forsaken me? If the Son of God lamented, lament is not faithlessness.", "For the parent of an estranged child, lament is especially important and especially neglected. The grief you carry is real. The loss of a relationship with your child, the loss of the future you imagined, the loss of holidays and milestones — these are real losses. They deserve to be named, not managed.", "What lament does is refuse to pretend. The writer of Lamentations goes deep into darkness — and then, without the pain resolving, without anything changing, arrives at verse 21: Yet this I call to mind, and therefore I have hope. The hope that emerges from lament is not manufactured. It is discovered."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Lamentations 3:1-20", "qs": ["Read Lamentations 3:1-33 slowly. In the first 20 verses, list the specific complaints the writer brings. Do not rush past them. What is he actually saying happened to him?", "Now read Psalm 22:1-11. What does David say in the opening verses? What has he expected from God that has not come?", "In both texts, the writers are honest about their experience before they arrive at any resolution. What do you notice about how they speak to God in those dark verses?"]}, {"d": 2, "focus": "The Turn", "verse": "Lamentations 3:21-24", "qs": ["Yet this I call to mind, and therefore I have hope: because of the LORD's great love we are not consumed, for his compassions never fail. What is remarkable about the word yet? What has happened between verses 20 and 21?", "The writer does not say his circumstances changed. He says he called something to mind. What is the difference between forcing positivity and choosing to remember truth?", "Where in your own life are you in need of that word yet? What truth could you call to mind without pretending the pain is not real?"]}, {"d": 3, "focus": "Why Lament Matters", "verse": "Psalm 22:1-2", "qs": ["Many of us were raised to believe that sadness, doubt, or pain in prayer is a sign of weak faith. How does seeing lament as a biblical category challenge that belief?", "Is there something you have been managing or suppressing rather than lamenting? Something you have never brought to God in its full weight because you were not sure it was allowed?", "What is the difference between complaining and lamenting? One is self-focused; the other is directed at God and holds on to relationship even in pain. Which do you tend toward?"]}, {"d": 4, "focus": "What You Have Not Said", "verse": "Lamentations 3:17-19", "qs": ["The writer does not skip the pain on the way to the promise. He names it fully. What affliction, bitterness, or wandering are you carrying that you have not fully named?", "Is there grief about the current season — the estrangement, the waiting, the losses — that you have not let yourself feel all the way through?", "What would it look like to write your own lament this week — not a faith statement, not a resolution, just an honest record of what has been hard?"]}, {"d": 5, "focus": "Hope on the Other Side", "verse": "Lamentations 3:25-33", "qs": ["The LORD is good to those whose hope is in him... it is good to wait quietly for the salvation of the LORD. This is said after the darkness, not instead of it. What does the sequence teach you about the relationship between honesty and hope?", "What does it mean to wait quietly for God? What does that kind of waiting require of you emotionally?", "Have you ever gone all the way into the darkness honestly and found something on the other side? Or is that still ahead of you? What do you need for that journey?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Lamentations 3:21", "qs": ["Write your own lament — the honest, unfiltered version. Name what has hurt. Name what you do not understand. Name what you have been afraid to say. Then see if you can end with yet... and one thing you choose to remember about God.", "What does God's willingness to receive lament tell you about the kind of relationship He wants with you?", "What is one thing you have been forcing yourself to be okay about that you are ready to stop pretending about?"]}]}, {"n": 4, "title": "The Father Who Runs", "sub": "Understanding God's Posture Toward You", "month": "july", "scripture": "Luke 15:11-32", "theme": "Before you get your speech ready, He is already running. His posture toward you is not what you have feared.", "video": {"title": "The Prodigal God", "channel": "Tim Keller", "search": "Tim+Keller+Prodigal+God+sermon+Luke+15", "note": "Tim Keller's teaching on the Prodigal Son is one of the most transformative things you can listen to. Search Keller Prodigal God."}, "commentary": ["The parable of the prodigal son is one of the most familiar stories in Scripture — and for the parent of an estranged child, one of the most complicated. You may have spent years praying for your prodigal to come home. You may have read this parable as a story about your child. But look again at who Jesus is really talking to: the father at the window, and the older sibling who stayed.", "The father in this parable is not polite about his love. He sees his son while he was still a long way off — meaning the father had been looking. The son had prepared a speech. He would come back not as a son but as a worker, and he would earn his way back in. The father never lets him finish the speech.", "There is also the older brother — the one who never left, who did everything right, who is furious about the party. Both brothers, in different ways, believed the father's love was conditional. Both were wrong.", "As the parent at the window, you may find yourself in a complicated position with this parable. You are the one who stayed. You are the one who has been faithful. And yet you may also be carrying hurt and resentment that looks more like the older brother than you would like to admit. That is not condemnation — it is an invitation."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Luke 15:11-24", "qs": ["Read Luke 15:11-32. Write out in your own words what each character does — the younger son, the father, the older son. Do not interpret yet. Just observe.", "Notice verse 17: He came to his senses. What does that phrase suggest about the nature of a prodigal's return? What does coming to your senses actually involve?", "What details does Jesus include about the father's response that go beyond what the son expected or deserved? List them. What does each one represent?"]}, {"d": 2, "focus": "The Father's Posture", "verse": "Luke 15:20", "qs": ["But while he was still a long way off, his father saw him and was filled with compassion for him; he ran to his son, threw his arms around him and kissed him. What does while he was still a long way off tell you about what the father had been doing?", "As a parent, how does it feel to see the father in this story — does it reflect how you have loved your child? Does it challenge you anywhere?", "What does this father's posture tell you about God's posture toward you — the one who has been waiting and watching?"]}, {"d": 3, "focus": "The Older Brother", "verse": "Luke 15:25-32", "qs": ["The older brother represents a different kind of lostness — faithfulness that has curdled into resentment. In what ways do you recognize the older brother's posture in yourself?", "The older brother says all these years I have been slaving for you. He has reduced relationship with the father to labor. Are there ways you have approached your own faithfulness as a way of earning something from God?", "The father says, You are always with me, and everything I have is yours. That was always true. He just never received it. What gifts or truths from God have you been withholding from yourself?"]}, {"d": 4, "focus": "The Parent at the Window", "verse": "Luke 15:20", "qs": ["The father in this story is scanning the horizon. He has not stopped watching. How does that image speak to your own experience of waiting — and to how God watches over you in return?", "What does it mean that the father ran? In the culture of the day, a patriarch running was undignified. He sacrificed his dignity to close the distance. What has love for your child cost you?", "Is there any bitterness, exhaustion, or self-protection in your heart that you have not yet brought to God? What would it look like to bring it — not to fix it, but to hand it over?"]}, {"d": 5, "focus": "Getting Your Heart Ready", "verse": "Luke 15:22-23", "qs": ["The son expected to be received as a servant. The father received him as a son — robe, ring, party, full restoration. If your prodigal came home tomorrow, would your heart be ready for full restoration? What would get in the way?", "What unhealthy patterns in yourself might resurface under the pressure of actual reconciliation?", "What work does God need to do in you so that if restoration comes, you can meet it with wisdom, health, and love?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Luke 15:20", "qs": ["Write a journal entry from the perspective of the father, the night after the son comes home. What is he feeling? What is he still afraid of?", "Where in your story do you most identify right now — the father scanning the horizon, the father at the party, or the older sibling outside?", "Write a prayer asking God to prepare your heart for whatever comes — return, continued waiting, or something you have not yet imagined."]}]}, {"n": 5, "title": "I Will Restore", "sub": "The Reach of God's Promise", "month": "july", "scripture": "Isaiah 61:1-4; Joel 2:25-27", "theme": "God does not just patch what was broken. He restores more than was lost — and calls it His own work.", "video": {"title": "Isaiah 40-66: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Isaiah+40+66+Read+Scripture", "note": "The Bible Project's Isaiah overview focuses heavily on restoration and new creation."}, "commentary": ["Isaiah 61 is the passage Jesus read in the synagogue at Nazareth and then said, Today this scripture is fulfilled in your hearing. The restoration that Israel had been waiting for — of broken lives, captive hearts, ruined cities — was standing in the room.", "Notice the scope of what Isaiah promises: freedom for captives, release from darkness, comfort for mourners, beauty for ashes, oil of joy for mourning, a garment of praise instead of a spirit of despair. This is not a small touch-up. This is a complete renovation.", "Joel 2:25 adds a dimension that is particularly significant for the parent in waiting: I will repay you for the years the locusts have eaten. Not just that the future will be good — but that the losses of the past will be addressed.", "That is an astonishing claim. Not that you will eventually feel better. But that the actual years of loss will be repaid. God can do something with what feels like pure waste."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Isaiah 61:1-3", "qs": ["Read Isaiah 61:1-4 and Joel 2:25-27. List every specific thing God promises to do in these passages. Do not generalize — write down each distinct promise.", "Isaiah 61:3 names three specific exchanges: beauty for ashes, oil of joy for mourning, a garment of praise for a spirit of despair. What does each exchange suggest about the nature of what God does?", "Joel 2:25 says God will repay the years the locusts have eaten. What have the locusts eaten in your story — what years, seasons, or chapters feel like pure loss?"]}, {"d": 2, "focus": "The Scope of Restoration", "verse": "Isaiah 61:1-2", "qs": ["Jesus quoted Isaiah 61:1-2 as a description of His own mission. What does it mean that the same Jesus who came to restore broken lives is the one walking with you through this study?", "The restoration in Isaiah 61 addresses the poor, the brokenhearted, the captive, the mourning. Which of those categories resonates most with where you are right now?", "What has your heart been captive to during this season of waiting — what pattern, fear, or way of coping has held you back?"]}, {"d": 3, "focus": "The Repaid Years", "verse": "Joel 2:25", "qs": ["I will repay you for the years the locusts have eaten. Sit with that promise specifically. What years are you asking God to repay?", "Do you believe God can do something with what feels like wasted time — not just that the future will be better, but that the losses themselves can be redeemed? What makes that hard to believe?", "What would repaid years look like for you practically?"]}, {"d": 4, "focus": "Beauty for Ashes", "verse": "Isaiah 61:3", "qs": ["To bestow on them a crown of beauty instead of ashes. What ashes in your life have become so familiar that you have almost forgotten they are ashes?", "Is there anything in your current season that you have accepted as permanent — a way of relating, a level of peace, a ceiling on your hope — that God might want to exchange?", "Beauty for ashes is a gift received, not a result achieved. What does it feel like to be in a posture of receiving rather than working toward something?"]}, {"d": 5, "focus": "Rebuilding", "verse": "Isaiah 61:4", "qs": ["They will rebuild the ancient ruins and restore the places long devastated. The people in Isaiah 61 become agents of restoration to others. What might God want to do through your restored life for others who are walking what you have walked?", "This study was born from one parent's wilderness. What does it stir in you to think that your pain might someday be the thing that finds another woman in hers?", "What ancient ruins — old dreams, abandoned callings, relationships that once had life — might God want to rebuild in and through you?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Isaiah 61:3", "qs": ["Write out the exchange you most need right now — in your own words. What specific ashes do you want to bring? What beauty do you want to ask for?", "Pray specifically over the years the locusts have eaten in your life. Name them. Tell God what you lost and ask Him to do what Joel says He will.", "What is one promise from this week's passages that you want to hold onto as an anchor for the rest of this study?"]}]}, {"n": 6, "title": "Relentless Love", "sub": "When God Pursues", "month": "july", "scripture": "Hosea 2:14-23; Romans 8:35-39", "theme": "Before you were ready to return, He was already preparing the way. Nothing separates you from this love.", "video": {"title": "Hosea: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Hosea+Read+Scripture", "note": "The Bible Project's Hosea video shows how the whole book is a story of God's relentless pursuit."}, "commentary": ["The book of Hosea is one of the most confronting love stories in Scripture. And then, after all of it — after the betrayal, the running — God says: Therefore I am now going to allure her; I will lead her into the wilderness and speak tenderly to her. He does not abandon her in the wilderness. He meets her there.", "Romans 8 makes the same claim: nothing — not death, not life, not angels, not demons, not present things, not future things — nothing in all creation is able to separate you from the love of God in Christ Jesus our Lord.", "For the parent in waiting, this is not just comfort. It is a reorientation. While you wait and watch for your child, God is watching for you with the same relentless love.", "His love for you does not increase when your child comes home and decrease when the phone stays silent. It is the same, relentless, wilderness-seeking love — for you, today, regardless of the outcome."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Hosea 2:14-17", "qs": ["Read Hosea 2:14-23 and Romans 8:35-39. List every promise God makes in Hosea 2:14-23. What do you notice about the progression — what does He restore first?", "In Romans 8:35-39, Paul lists every possible threat to God's love. What is on the list? What is NOT on the list that you might have expected?", "What does it mean that God does not just forgive Israel in Hosea but actively pursues her — leading her into the wilderness to speak tenderly to her?"]}, {"d": 2, "focus": "Pursued, Not Just Forgiven", "verse": "Hosea 2:14", "qs": ["God does not just forgive Israel — He pursues her. What is the difference between a God who forgives and a God who actively pursues? Which one do you actually live as if you believe in?", "Has there ever been a wilderness season that you later recognized as a place where God was speaking tenderly to you? What does that reframe for you?", "What would it mean to experience God's pursuit not as pressure but as tenderness — as someone who wants you, not just someone who will take you back?"]}, {"d": 3, "focus": "Nothing Can Separate", "verse": "Romans 8:38-39", "qs": ["Nothing in all creation will be able to separate us from the love of God that is in Christ Jesus our Lord. If you actually believed this experientially, what fear would it remove?", "While you wait for your child, what threatens your sense of being loved by God? What makes you feel more or less worthy of His attention?", "Paul says nothing can separate us. But we can distance ourselves from the experience of that love. What is the difference between being separated from God's love and not being able to feel it?"]}, {"d": 4, "focus": "The Valley Becomes a Door", "verse": "Hosea 2:15", "qs": ["There I will give her back her vineyards, and will make the Valley of Achor a door of hope. The Valley of Achor was a place of shame. God says He will make that place a door. What valleys of trouble in your story might God want to redeem as unexpected doors?", "Have you ever found that a season of brokenness became unexpectedly useful — that what you went through gave you something you needed?", "What would it mean to stop viewing this season only as something to endure and start wondering what door God might be creating in it?"]}, {"d": 5, "focus": "The Covenant Renewed", "verse": "Hosea 2:19-20", "qs": ["I will betroth you to me forever; I will betroth you in righteousness and justice, in love and compassion. This is a renewal of relationship, not just a rescission of punishment. What is the difference between God removing your guilt and God renewing your relationship with Him?", "What would it look like for your relationship with God this season to move from I should be doing better to genuine intimacy?", "Has the waiting affected your relationship with God — made you more dependent on Him, more distant, or somewhere in between? Be honest."]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Romans 8:39", "qs": ["Write out what you are most afraid has diminished God's love for you. Then write Romans 8:39 over it. Sit with the tension.", "What is one fear about God's love that you are carrying that you want to release? Name it and ask God to help you receive what Romans 8 says is already true.", "Write a prayer of response to the relentless love described in Hosea 2 and Romans 8 — not asking for things, but responding to what is already true."]}]}, {"n": 7, "title": "Valley of Dry Bones", "sub": "God Specializes in What Looks Dead", "month": "july", "scripture": "Ezekiel 37:1-14; John 11:38-44", "theme": "The question can these bones live is not a doubt — it is an invitation to believe in resurrection.", "video": {"title": "Ezekiel: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Ezekiel+Read+Scripture+dry+bones", "note": "The Bible Project's Ezekiel video covers the dry bones passage beautifully."}, "commentary": ["The valley in Ezekiel 37 is full of bones that are very dry. This is not a fresh tragedy. These bones have been in the sun a long time. The dryness is the point — Ezekiel is being shown something that has been dead so long that hope has been out of the conversation for a while.", "God asks a peculiar question: Son of man, can these bones live? Ezekiel gives the only honest answer available: Sovereign LORD, you alone know. He does not say yes to seem faithful. He does not say no to seem realistic. He says: I do not know, but you do. That posture — uncertainty held by trust — is itself a kind of faith.", "Then God tells him to prophesy to the bones. To speak life over what looks impossible. And bones begin to rattle. Tendons appear. Flesh comes. But they still are not alive — there is no breath yet. Restoration in Ezekiel's vision is a process with stages.", "For the parent in waiting, there are places that feel like dry bones. God is asking you the same question He asked Ezekiel. Not as a doubt. As an invitation."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Ezekiel 37:1-6", "qs": ["Read Ezekiel 37:1-14 and John 11:38-44. In Ezekiel 37, describe the scene in your own words — what does God show Ezekiel, and what does He then ask him to do?", "Why do you think God says the bones are very dry? What is He emphasizing about the condition of what He is about to restore?", "In John 11, Jesus weeps before raising Lazarus — He knows what He is about to do. Why do you think He weeps anyway? What does that tell you about how God regards your pain?"]}, {"d": 2, "focus": "The Question", "verse": "Ezekiel 37:3", "qs": ["Can these bones live? Ezekiel answers: Sovereign Lord, you alone know. What is wise and faithful about that answer? What is the posture behind it?", "What would you answer if God asked you directly about the driest places in your story — your relationship with your child, your capacity for hope, your sense of future? What is your honest answer?", "What does it look like to hold hope without forcing certainty you do not have — to say You alone know and mean it as trust rather than resignation?"]}, {"d": 3, "focus": "Prophesying to the Bones", "verse": "Ezekiel 37:4-8", "qs": ["God tells Ezekiel to prophesy — to speak God's word — to what is dead. What Scripture, truth, or promise has God been asking you to speak over your own story, even when it feels impossible?", "The bones respond to the prophecy — they come together and flesh appears, but there is still no breath (v.8). Restoration can be a process with stages. What stage do you think you are in right now?", "What does it mean to speak life over your situation — not as a denial of what is hard, but as agreement with what God says is possible?"]}, {"d": 4, "focus": "The Breath", "verse": "Ezekiel 37:9-10", "qs": ["The structure appears before the breath comes. What does the distinction between structure (bones, flesh) and life (breath/Spirit) tell you about the limits of what effort and discipline can accomplish alone?", "Ezekiel had to prophesy twice — once to the bones, once to the breath. What does that tell you about persistence in prayer and about the process of restoration?", "What would it look like to invite the Holy Spirit specifically into the places in your heart that feel formed but not yet living?"]}, {"d": 5, "focus": "A Vast Army", "verse": "Ezekiel 37:10", "qs": ["They came to life and stood up on their feet — a vast army. The bones become not just alive, but purposeful. What does that suggest about what God intends for your restored life?", "What might God want to do through your restored life — not just for you, but for other parents who are carrying what you have carried?", "Is there any part of you that is afraid of what fully alive would require — that restoration might ask as much of you as the brokenness has?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Ezekiel 37:14", "qs": ["I will put my Spirit in you and you will live. Write a prayer over the driest area of your life — the part that has been in the sun the longest, the thing you have most given up on. Ask for breath.", "Where are you in the valley of dry bones right now — scattered bones? Bones coming together? Form but no breath? Standing? Describe where you are.", "What would you tell yourself a year from now, if the restoration you are praying for had actually happened? Write it as a letter to yourself."]}]}, {"n": 8, "title": "From Mourning to Dancing", "sub": "The Long Journey Through", "month": "august", "scripture": "Psalm 30; Psalm 23", "theme": "The path from mourning to dancing is real — and it moves through the valley, not around it.", "video": {"title": "Psalm 30 and Psalm 23 Teaching", "channel": "Various", "search": "Psalm+30+weeping+night+joy+morning+Bible+teaching", "note": "Search Psalm 30 Bible teaching for several strong devotional messages."}, "commentary": ["Psalm 30 contains one of the most honest verses in all of Scripture: Weeping may stay for the night, but rejoicing comes in the morning. It is often quoted in a way that minimizes the weeping — as if the point is to skip to the morning as fast as possible. But David does not do that. He writes the whole psalm.", "The night is real. The night has a duration — it stays, as the text says. And it is the night itself — not a shortcut around it — that gives way to morning. For the parent of an estranged child, the night can seem very long.", "Psalm 23 maps the same journey with different language: Even though I walk through the valley of the shadow of death, I will fear no evil — for you are with me. The valley is walked through. And the Shepherd's presence is most specifically available in the valley, not after it.", "What these two psalms offer together is this: you are not alone in the night, and the night will not last. The Shepherd who walks with you through the valley is the same God who is preparing the dancing."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Psalm 30:1-5", "qs": ["Read Psalm 30 and Psalm 23. Write down every movement in Psalm 30 — from what state to what state? How many transitions happen in this psalm?", "In Psalm 23, what specific things does the Shepherd provide? List them. What environment do many of them occur in — safe places or difficult ones?", "Both psalms are written from the other side of the valley. What does it tell you that the writers recorded the darkness as clearly as the light — even after they were through it?"]}, {"d": 2, "focus": "The Night and the Morning", "verse": "Psalm 30:5", "qs": ["Weeping may stay for the night, but rejoicing comes in the morning. The night has a duration — it stays. What does it mean to honor the night as a real season rather than rushing past it?", "Where are you in the rhythm of night and morning right now — deep in the night, beginning to see hints of dawn, or somewhere you cannot quite name?", "What is the difference between hoping for morning (which is faith) and demanding it on your own timeline (which is control)? Which posture do you most naturally take?"]}, {"d": 3, "focus": "The Valley", "verse": "Psalm 23:4", "qs": ["Even though I walk through the valley of the shadow of death, I will fear no evil — for you are with me. The promise is companionship, not removal. What does it mean that God does not promise to lift you out of the valley but to walk through it with you?", "What valley are you walking through right now? Name it as specifically as you can — not a category but an actual situation, an actual fear, an actual weight you carry.", "The rod and the staff are most specifically mentioned in the valley. What has God used to guide and protect you in this difficult season? Can you name it?"]}, {"d": 4, "focus": "Dancing", "verse": "Psalm 30:11-12", "qs": ["You turned my wailing into dancing; you removed my sackcloth and clothed me with joy. God turns the mourning — He does not just end it, He transforms it. What is the difference between mourning ending and mourning being transformed?", "Have you ever experienced mourning that turned into something generative — grief that somehow became a gift? What happened? What allowed the turn?", "Is there any part of you that is afraid to hope for dancing — afraid to believe this season could end in genuine joy rather than just in management? What is the fear underneath that?"]}, {"d": 5, "focus": "He Restores My Soul", "verse": "Psalm 23:3", "qs": ["He restores my soul. The Hebrew word for restores here is shub — to bring back, to return. Does your soul feel away from where it needs to be right now? Where has it drifted?", "What would it look like to actively cooperate with soul restoration this season — not forcing it, but not resisting it either?", "What practices, rhythms, or relationships has God used before to restore your soul? Are any of those available to you right now?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Psalm 30:2", "qs": ["Write out Psalm 30 in your own words — the honest version that includes the dark parts and does not rush to the resolution.", "Where are you in the journey — night, dawn, or dancing? Write honestly about what that location feels like right now.", "What would you need to believe about God to trust that morning is coming, even if you cannot see it yet?"]}]}, {"n": 9, "title": "Renew Your Mind", "sub": "Where Change Actually Happens", "month": "august", "scripture": "Romans 12:1-2; Philippians 4:4-9", "theme": "The patterns you live by were shaped in your mind first. Transformation starts there — not with trying harder.", "video": {"title": "Romans: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Romans+Read+Scripture+mind+transformation", "note": "The Bible Project's Romans overview covers the transformation Paul describes in Romans 12."}, "commentary": ["Romans 12:1-2 is a hinge in Paul's letter. The first eleven chapters explain what God has done in Christ. Chapter 12 begins: Therefore... And what Paul asks for in response is not a moral code or a list of behaviors. He asks for a transformed mind.", "Do not conform to the pattern of this world, but be transformed by the renewing of your mind. The word transformed in Greek is metamorphoo — the same root as metamorphosis. It is a structural change in the mind — in the deep patterns of thought, assumption, belief, and interpretation that shape everything that follows.", "For the parent in waiting, this is especially important. The patterns that tend to emerge in relationships — walking on eggshells, over-functioning, shutting down — are rooted in the mind. They are grooves worn deep by years of repetition. Behavior modification that does not touch those underlying grooves will always revert.", "Philippians 4 gives the practical shape of renewal: Whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable — think about such things. Repeated thought patterns create grooves. The question is not whether you will have grooves, but which ones you will deepen."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Romans 12:1-2", "qs": ["Read Romans 12:1-2 and Philippians 4:4-9. In Romans 12:2, Paul gives both a negative command (do not conform) and a positive one (be transformed). What is the difference between what you are turning from and what you are turning toward?", "In Philippians 4:8, Paul gives a list of things to think about — true, noble, right, pure, lovely, admirable, excellent, praiseworthy. Which of these does your mind naturally spend time on? Which does it avoid?", "What does Paul say is the result of a renewed mind (Romans 12:2b)? Why does being able to test and approve God's will matter?"]}, {"d": 2, "focus": "The Pattern of This World", "verse": "Romans 12:2a", "qs": ["Do not conform to the pattern of this world. What are the relational patterns in your world — the assumptions, the defaults, the scripts — that you have absorbed without consciously choosing them?", "What did you learn from your family of origin, from early relationships, from culture about how to handle conflict, vulnerability, love, and fear? How much of that is still operating in you?", "What is the difference between a pattern you have chosen and a pattern that has chosen you? How do you tell the difference in your own life?"]}, {"d": 3, "focus": "Transformation vs. Trying Harder", "verse": "Romans 12:2b", "qs": ["Why does not trying harder produce lasting change? What is missing from a willpower-only approach to breaking old patterns?", "Think about a specific relational pattern you want to change. What are the thoughts, beliefs, or interpretations that feed that pattern? What are you believing about yourself or the other person when you go into that mode?", "What would it look like to address the thought pattern beneath the behavior — not just to manage the behavior itself?"]}, {"d": 4, "focus": "Philippians 4 Practice", "verse": "Philippians 4:8", "qs": ["Paul's list in Philippians 4:8 directs you to fill your mind with what is genuinely true and good. What in your current life is true, noble, lovely, admirable — that your mind might be overlooking?", "What thoughts or mental scripts tend to run on repeat in your mind — especially about your child, about yourself, about the future? Name the specific ones. Which of Paul's list are they NOT on?", "What would it look like to practice taking thoughts captive (2 Corinthians 10:5) this week? What one thought would you start with?"]}, {"d": 5, "focus": "The Peace That Guards", "verse": "Philippians 4:7-9", "qs": ["The peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus. The peace is a guard — it protects the mind. What conditions in your life allow that peace to operate? What conditions crowd it out?", "Verse 9 ends: And the God of peace will be with you. What is the difference between a theological concept and a relational presence? Which do you more often experience?", "What one practice could you commit to this week that specifically targets the renewal of your mind?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Romans 12:2", "qs": ["What is the mental groove that most needs to be replaced in this season? Name it as specifically as you can — not negative thinking but the actual recurring thought or belief.", "Write a prayer asking God for a renewed mind — not as a vague request but targeting specific beliefs and thoughts you want transformed.", "What have you learned about yourself this week that changes how you think about the work of restoration?"]}]}, {"n": 10, "title": "Walk Differently", "sub": "New Patterns, Not Just New Tries", "month": "august", "scripture": "Ephesians 4:17-32; Galatians 5:16-25", "theme": "You do not break old patterns by trying harder at the old version. You replace them by choosing new ones, consistently, in small moments.", "video": {"title": "Ephesians: Read Scripture", "channel": "The Bible Project", "search": "Bible+Project+Ephesians+Read+Scripture+new+self", "note": "The Bible Project's Ephesians video frames the letter around the idea of a new humanity."}, "commentary": ["Ephesians 4 uses a striking metaphor: putting off the old self like a garment and putting on the new self. This is practical, embodied language. You do not think yourself into new patterns by reflection alone. You put them off. You put them on. The change is enacted in specific moments of choice, often small ones.", "Paul gives very concrete examples: instead of falsehood, truth-telling. Instead of unchecked anger, anger that does not persist past sundown. Instead of corrupting talk, building-up talk. Each one names what to stop and what to replace it with. The structure matters: you do not just stop the old. You replace it with something.", "For parents in waiting — the patterns worth examining are the ones that will matter most if restoration comes. Walking on eggshells. Over-explaining to keep the peace. Managing the other person's emotions so conflict does not happen. Protecting yourself so thoroughly that love is present — but so is fear.", "Galatians 5 frames all of this as walking in the Spirit — not a one-time decision but a pattern of life, moment by moment, choice by choice. The fruit does not come from trying harder. It comes from staying close to the source."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Ephesians 4:17-24", "qs": ["Read Ephesians 4:17-32 and Galatians 5:16-25. In Ephesians 4, what is Paul's description of the old self? What characterizes it?", "List the specific put off / put on pairs Paul gives in Ephesians 4:25-32. For each pair, note what is being replaced and with what.", "In Galatians 5, what is the fruit of the Spirit? Which of those fruits feels most undeveloped in you right now — and which would most change your relational patterns if it grew?"]}, {"d": 2, "focus": "The Put-Off", "verse": "Ephesians 4:22", "qs": ["Put off your old self, which is being corrupted by its deceitful desires. What are the relational patterns in your life that promise something they do not deliver? What do they promise? What do they actually produce?", "Think specifically about how you relate under pressure — when a difficult conversation feels imminent, when you are afraid of conflict, when you are trying to protect yourself. What is the default pattern?", "What is the most persistent old self pattern you want to put off in this season? Be specific — not a category but a particular way of thinking, speaking, or responding."]}, {"d": 3, "focus": "The Put-On", "verse": "Ephesians 4:24", "qs": ["Put on the new self, created to be like God in true righteousness and holiness. The new self is not self-created — it is created to be like God. What does that mean for your role in the process?", "For the specific pattern you identified yesterday, what would the put on look like? What is the specific new way of thinking, speaking, or responding that replaces it?", "Paul gives replacement behaviors, not just prohibitions. You need to know what you are moving toward, not just what you are moving away from. What are you moving toward?"]}, {"d": 4, "focus": "In Small Moments", "verse": "Ephesians 4:25-29", "qs": ["The put off / put on pairs Paul gives are all very specific, everyday situations. Where in the ordinary moments of your days does the old pattern tend to show up most?", "What is a small, specific moment this week where you can practice walking differently — not a big dramatic change, but one small choice made differently than you usually make it?", "Verse 27 says do not give the devil a foothold. A foothold is a small grip that grows from small compromises. What small compromise tends to open the door to the larger pattern you are trying to break?"]}, {"d": 5, "focus": "Walking in Step", "verse": "Galatians 5:25", "qs": ["Since we live by the Spirit, let us keep in step with the Spirit. This is not a once-for-all decision — it is a rhythm. What does keeping in step look like for you practically in a real day?", "The fruit of the Spirit is grown, not manufactured. What conditions in your daily life are hospitable to Spirit-produced fruit? What conditions are hostile to it?", "If the fruit of gentleness, or peace, or patience grew more fully in you, what would change about how you move through the world — and how you would be ready for whatever comes with your child?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Ephesians 4:24", "qs": ["Write out your own put off / put on map — the specific old pattern and the specific new one you are building. Make it as concrete as Paul does.", "What accountability, community, or practice do you need to support the new patterns you are trying to build? Restoration does not happen in isolation.", "What has surprised you about the work of change — what is harder than you expected, or different than you thought it would be?"]}]}, {"n": 11, "title": "Who You Are, Not What Happened", "sub": "A Secured Identity", "month": "august", "scripture": "Ephesians 1:3-14; 1 John 3:1-3", "theme": "Your identity is not located in your history, your patterns, or how someone treated you. It is fixed in what God has declared over you.", "video": {"title": "Identity in Christ", "channel": "Christine Caine or Bible Project", "search": "Christine+Caine+identity+in+Christ+OR+Bible+Project+Ephesians", "note": "Christine Caine's identity-focused teachings are excellent for this week."}, "commentary": ["The deepest enemy of restoration is a mistaken identity. When we believe we are defined by our patterns, our failures, our history, or what someone else decided we were worth, we will keep returning to those definitions under pressure.", "For the parent of an estranged child, the identity wound can be particularly deep. So much of a parent's sense of self is bound up in the relationship with their child. When that relationship fractures, the question that surfaces — often unspoken — is: what kind of mother am I if my child does not want me?", "Ephesians 1:3-14 piles declaration upon declaration: chosen before the foundation of the world, adopted as sons and daughters, redeemed through His blood, forgiven, lavished with grace, sealed with the Holy Spirit. Every one of those declarations precedes any behavior you have produced. They are not earned. They are received.", "1 John 3:1 adds the relational warmth: See what great love the Father has lavished on us, that we should be called children of God! And that is what we are! Your worth is not located in your child's response to you. It was settled before the foundation of the world."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "Ephesians 1:3-8", "qs": ["Read Ephesians 1:3-14 slowly. List every identity declaration Paul makes — every you are and you have statement. Write them all down.", "Read 1 John 3:1-3. What does John invite you to see (behold) in verse 1? What is the emotion behind his writing?", "How many of the declarations in Ephesians 1 are things God has done versus things you have earned or produced? What does the proportion tell you?"]}, {"d": 2, "focus": "Chosen Before the Foundation", "verse": "Ephesians 1:4", "qs": ["He chose us in him before the creation of the world. This choosing happened before you existed, before you did anything good or bad, and before any relationship in your life took the shape it has taken. What does that pre-history do to the idea that any person or circumstance can define your worth?", "As a parent, is there a way in which your sense of value has become entangled with your child's response to you? Where do you feel that most?", "What would it mean to make chosen before the foundation of the world the starting point of how you think about yourself — the ground you stand on before the day's events, before the phone rings or does not ring?"]}, {"d": 3, "focus": "Adopted", "verse": "Ephesians 1:5", "qs": ["He predestined us for adoption to sonship through Jesus Christ. Adoption is a deliberate, costly, chosen act. You do not accidentally adopt. What does the intentionality of adoption tell you about the kind of belonging God is offering?", "Is there a pattern in your life of behaving like an orphan — trying to earn safety, managing others' feelings to secure your place, not believing you fully belong? Where do you see that?", "What would it look like to live from I belong here in your relationship with God — as an adopted child, not a servant trying to keep the job?"]}, {"d": 4, "focus": "The Identity Wound", "verse": "1 John 3:1", "qs": ["What kind of mother am I if my child does not want me? If that question lives in you — and it does for many parents in this situation — write it down and then write Ephesians 1:4 next to it. Sit with the contrast.", "What identity has this season of estrangement seemed to confirm or threaten? What story about yourself has it made it easier to believe?", "What would it mean to disagree with the identity that the estrangement has assigned you — not by pretending it does not hurt, but by choosing to stand on a different declaration?"]}, {"d": 5, "focus": "Becoming What We Are", "verse": "1 John 3:2-3", "qs": ["What we will be has not yet been made known. But we know that when he appears, we shall be like him, for we shall see him as he is. Your restoration has a direction: Christlikeness. How does knowing the destination change how you relate to the process?", "Verse 3 says: All who have this hope in him purify themselves, just as he is pure. Hope for the future produces holiness in the present. How does your hope — or lack of it — affect your choices in this season?", "What would it look like to live toward who you are becoming rather than back toward who you were?"]}, {"d": 6, "focus": "Reflection and Prayer", "verse": "Ephesians 1:6", "qs": ["Take the list of declarations from Ephesians 1:3-14 you wrote on Day 1. Read each one aloud over yourself. What feels true? What feels hard to receive? Where is the resistance coming from?", "Write a new identity statement — not aspirational but declarative. Not I want to be someone who... but I am someone who... based on Ephesians 1 and 1 John 3.", "What is one declaration from this week that you want to carry into the final week of this study as an anchor?"]}]}, {"n": 12, "title": "Flourishing", "sub": "The Fruit of a Restored Life", "month": "august", "scripture": "John 15:1-17; Psalm 92:12-15", "theme": "A restored life is not just a healed life. It is an overflowing one — rooted deep, bearing fruit, and giving life to others.", "video": {"title": "John: Read Scripture — Abiding in Christ", "channel": "The Bible Project", "search": "Bible+Project+John+Read+Scripture+abide+vine+branches", "note": "The Bible Project's John overview and any teaching on John 15 will anchor this final week beautifully."}, "commentary": ["The image Jesus chooses for fruitfulness is not an athlete. It is not a builder. It is not even a warrior. It is a branch on a vine. And the branch's only job — its entire contribution to bearing fruit — is to stay connected. Abide in me, and I in you.", "This is the final word on what this study has been about. Not try harder. Not do more. Not make a better plan. Abide. Stay. Remain. Let the connection be real, be nourished, be the thing you protect above all else.", "Psalm 92 gives us the final image: planted in the house of the LORD, they will flourish. They will still bear fruit in old age. They will stay fresh and green. The key word is planted. Flourishing is not about striving. It is about where you are rooted.", "You began this study saying your heart was not ready. You have spent twelve weeks letting God show you why, and what to do about it, and who He says you are. The woman who finishes this study is not the same woman who started it."], "days": [{"d": 1, "focus": "Reading the Text", "verse": "John 15:1-5", "qs": ["Read John 15:1-17 and Psalm 92:12-15. In John 15, what is Jesus' role? What is the Father's role? What is your role?", "What does Jesus say happens to branches that do not bear fruit (v.2)? What happens to branches that do? What does the pruning process suggest about the purpose of difficult seasons?", "In Psalm 92, what images are used for a flourishing life? What do they tell you about the qualities of a restored life — strength, longevity, rootedness?"]}, {"d": 2, "focus": "Abiding", "verse": "John 15:4", "qs": ["Abide in me, and I in you. The word abide appears ten times in John 15. What does abiding actually look like in practice — in a real day, in a real season of waiting?", "What threatens your ability to abide — to stay connected to Christ in this season? What pulls you away from that rootedness most often?", "This study has been about going deep. What does going deep look like for you going forward — not just in this season, but as a way of life?"]}, {"d": 3, "focus": "The Fruit of Connection", "verse": "John 15:5", "qs": ["Apart from me you can do nothing. How does that statement land? Is it discouraging or liberating — or both? What does it free you from?", "What fruit has already begun to grow in you over these twelve weeks? What is different — even if just slightly — about how you see yourself, how you approach God, or how you understand your patterns?", "What does the fruit of a restored life look like for you specifically — not in general categories, but in your actual relationships, your actual daily life?"]}, {"d": 4, "focus": "Joy Made Full", "verse": "John 15:11", "qs": ["I have told you this so that my joy may be in you and that your joy may be complete. The goal of abiding is not just survival or healing — it is complete joy. What is the difference between happiness and the kind of joy Jesus is describing?", "Is complete joy possible while you are still waiting, still uncertain, still in the middle of the story? What would that look like?", "What steals your joy most reliably in this season? What restores it? What does the pattern tell you?"]}, {"d": 5, "focus": "Planted", "verse": "Psalm 92:13-14", "qs": ["Planted in the house of the LORD, they will flourish... they will still bear fruit in old age, they will stay fresh and green. Flourishing comes from being planted, not from striving. What does it mean to be planted — to be rooted rather than searching?", "Where do you feel most planted right now — in what relationships, rhythms, or places does your life feel rooted? Where do you feel most unrooted?", "What is one thing you want to do coming out of this study to stay planted — a practice, a community, a rhythm that keeps your roots in the soil?"]}, {"d": 6, "focus": "Final Reflection", "verse": "John 15:16", "qs": ["You did not choose me, but I chose you and appointed you so that you might go and bear fruit — fruit that will last. Looking back over all twelve weeks, where do you see God's choosing and appointing at work in your story — even in the hard parts?", "Write a letter to yourself — the version of you who started this study. What do you know now that you did not know then? What has moved? What has God done?", "What is one thing you carry forward from this study as a stake in the ground — a truth you have claimed, a pattern you are walking away from, a promise you are standing on?"]}]}];
+
+// Supabase init
+const { createClient } = supabase;
+const sb = createClient('https://leusmrtsyuqbfojtpaxx.supabase.co', 'sb_publishable_z-4PxqtWZkLyiyNDQfvrGQ_2-cQNiiT');
+
+let currentUser = null;
+let answers = {};
+let saveTimer = null;
+let pendingSaves = {};
+let cw = 0, ct = 'questions', od = null;
+
+// ── AUTH ──────────────────────────────────────────────────────
+let isSignUp = false;
+
+function toggleAuthMode() {
+  isSignUp = !isSignUp;
+  document.getElementById('auth-title').textContent = isSignUp ? 'Create your free account' : 'Sign in to your study';
+  document.getElementById('auth-submit').textContent = isSignUp ? 'Create Account' : 'Sign In';
+  document.getElementById('auth-pass2').style.display = isSignUp ? 'block' : 'none';
+  document.getElementById('auth-switch').innerHTML = isSignUp
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
+    : 'New here? <a onclick="toggleAuthMode()">Create a free account</a>';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('auth-success').style.display = 'none';
+}
+
+function showAuthSuccess(msg) {
+  const el = document.getElementById('auth-success');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const pass2 = document.getElementById('auth-pass2').value;
+  const btn = document.getElementById('auth-submit');
+
+  if (!email || !pass) { showAuthError('Please enter your email and password.'); return; }
+  if (isSignUp && pass !== pass2) { showAuthError('Passwords do not match.'); return; }
+  if (isSignUp && pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = isSignUp ? 'Creating account...' : 'Signing in...';
+  document.getElementById('auth-error').style.display = 'none';
+
+  try {
+    if (isSignUp) {
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      if (error) { showAuthError(error.message); btn.disabled = false; btn.textContent = 'Create Account'; return; }
+      if (data.session) {
+        currentUser = data.user;
+        showStudy();
+      } else {
+        showAuthSuccess('Account created! Check your email to confirm, then sign in.');
+        btn.disabled = false; btn.textContent = 'Create Account';
+        isSignUp = false;
+        toggleAuthMode();
+      }
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) { showAuthError('Invalid email or password. Please try again.'); btn.disabled = false; btn.textContent = 'Sign In'; return; }
+      currentUser = data.user;
+      showStudy();
+    }
+  } catch(e) {
+    showAuthError('Something went wrong. Please try again.');
+    btn.disabled = false;
+    btn.textContent = isSignUp ? 'Create Account' : 'Sign In';
+  }
+}
+
+document.getElementById('auth-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('auth-pass').focus(); });
+document.getElementById('auth-pass').addEventListener('keydown', e => { if(e.key==='Enter') { if(isSignUp) document.getElementById('auth-pass2').focus(); else handleAuth(); } });
+document.getElementById('auth-pass2').addEventListener('keydown', e => { if(e.key==='Enter') handleAuth(); });
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  answers = {};
+  document.getElementById('study-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+  document.getElementById('auth-submit').disabled = false;
+  document.getElementById('auth-submit').textContent = 'Sign In';
+}
+
+// ── ANSWERS ───────────────────────────────────────────────────
+function akey(w,d,q) { return `w${w}-d${d}-q${q}`; }
+function ga(w,d,q) { return answers[akey(w,d,q)] || ''; }
+
+async function loadAnswers() {
+  setSt('Loading your answers...', '');
+  try {
+    const { data, error } = await sb.from('answers').select('answer_key,answer_text').eq('user_id', currentUser.id);
+    if (error) throw error;
+    answers = {};
+    (data || []).forEach(r => { answers[r.answer_key] = r.answer_text; });
+    setSt('Answers loaded ✓', 'saved');
+    setTimeout(() => setSt('Answers save automatically', ''), 2000);
+  } catch(e) {
+    setSt('Could not load answers', 'error');
+  }
+}
+
+function handleInput(w,d,q,val) {
+  const key = akey(w,d,q);
+  answers[key] = val;
+  pendingSaves[key] = {w,d,q,val};
+  setSt('Saving...', 'saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSaves, 1200);
+}
+
+async function flushSaves() {
+  if (!currentUser || Object.keys(pendingSaves).length === 0) return;
+  const toSave = Object.values(pendingSaves);
+  pendingSaves = {};
+  try {
+    const rows = toSave.map(s => ({
+      user_id: currentUser.id,
+      answer_key: akey(s.w,s.d,s.q),
+      answer_text: s.val,
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await sb.from('answers').upsert(rows, { onConflict: 'user_id,answer_key' });
+    if (error) throw error;
+    setSt('✓ Saved', 'saved');
+    setTimeout(() => setSt('Answers save automatically', ''), 2000);
+    rnav();
+  } catch(e) {
+    setSt('Save failed — tap Export as backup', 'error');
+  }
+}
+
+function setSt(msg,cls) {
+  const el = document.getElementById('save-st');
+  el.textContent = msg;
+  el.className = 'save-st' + (cls ? ' ' + cls : '');
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function toggleExp() {
+  const p = document.getElementById('exp-panel');
+  const show = p.style.display === 'none' || !p.style.display;
+  p.style.display = show ? 'block' : 'none';
+  if (show) buildExp();
+}
+function buildExp() {
+  let txt = 'RESTORATION — 12-Week Bible Study\nMy Answers\n\n';
+  WEEKS.forEach(w => {
+    let has = false;
+    w.days.forEach(d => d.qs.forEach((_,qi) => { if(ga(w.n,d.d,qi).trim()) has=true; }));
+    if(!has) return;
+    txt += '='.repeat(40) + '\nWEEK ' + w.n + ': ' + w.title + '\n' + w.scripture + '\n' + '='.repeat(40) + '\n\n';
+    w.days.forEach(d => {
+      let dh=false; d.qs.forEach((_,qi) => { if(ga(w.n,d.d,qi).trim()) dh=true; });
+      if(!dh) return;
+      txt += 'Day ' + d.d + ' — ' + d.focus + '\n' + '-'.repeat(30) + '\n';
+      d.qs.forEach((q,qi) => { const a=ga(w.n,d.d,qi); if(a.trim()) txt += 'Q'+(qi+1)+': '+q+'\nA: '+a+'\n\n'; });
+    });
+  });
+  document.getElementById('exp-ta').value = txt || 'No answers yet.';
+}
+function selExp() { const t=document.getElementById('exp-ta'); t.focus(); t.select(); }
+
+// ── SHOW STUDY ───────────────────────────────────────────────
+async function showStudy() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('study-screen').style.display = 'block';
+  await loadAnswers();
+  render();
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function cntW(wi) {
+  const w=WEEKS[wi]; let c=0,t=0;
+  w.days.forEach(d=>d.qs.forEach((_,qi)=>{t++;if(ga(w.n,d.d,qi).trim())c++;}));
+  return{c,t};
+}
+
+function rnav() {
+  const nav=document.getElementById('wnav'); nav.innerHTML='';
+  let lm='';
+  WEEKS.forEach((w,i) => {
+    if(w.month!==lm) { lm=w.month; const l=document.createElement('span'); l.className='mlbl'; l.textContent=w.month.charAt(0).toUpperCase()+w.month.slice(1); nav.appendChild(l); }
+    const b=document.createElement('button');
+    b.className='wbtn'+(i===cw?' active':'');
+    b.textContent=w.n; b.title='Week '+w.n+': '+w.title;
+    const{c}=cntW(i);
+    if(c>0){const dot=document.createElement('span');dot.className='wdot';b.appendChild(dot);}
+    b.onclick=()=>{cw=i;od=null;ct='questions';render();window.scrollTo(0,0);};
+    nav.appendChild(b);
+  });
+}
+
+function rweek() {
+  const w=WEEKS[cw]; const{c,t}=cntW(cw);
+  const mc=w.month==='june'?'#8B6540':w.month==='july'?'#A04040':'#2A7A7A';
+  let h=`<div class="wcard ${w.month}"><div class="wch"><div class="mtag">Week ${w.n} &middot; ${w.month.charAt(0).toUpperCase()+w.month.slice(1)}</div><h2>${w.title}</h2><div class="wsub">${w.sub}</div></div><div class="wcb"><div class="scr"><strong>Scripture:</strong> ${w.scripture}</div><div class="thm">&ldquo;${w.theme}&rdquo;</div></div></div>`;
+  h+=`<div class="tabs"><button class="tbtn ${ct==='questions'?'active':''}" onclick="setTab('questions')">&#128214; Study</button><button class="tbtn ${ct==='commentary'?'active':''}" onclick="setTab('commentary')">&#128172; Commentary</button><button class="tbtn ${ct==='video'?'active':''}" onclick="setTab('video')">&#127916; Video</button></div>`;
+
+  if(ct==='questions') {
+    h+=`<div class="prog-row"><span style="color:#9A8570;font-size:.68rem;text-transform:uppercase;letter-spacing:.09em">6-Day Study &middot; ${w.scripture}</span><span style="color:${c>0?'#4CAF50':'#9A8570'};font-weight:600">${c}/${t} answered</span></div>`;
+    h+='<div class="dlst">';
+    w.days.forEach(day=>{
+      const ans=day.qs.filter((_,qi)=>ga(w.n,day.d,qi).trim()).length;
+      const isO=od===day.d;
+      h+=`<div class="ditem"><button class="dhdr" onclick="toggleDay(${day.d})"><div class="dnum ${isO?'on':''}" ${isO?`style="background:${mc};color:#fff"`:''}>  ${day.d}</div><div class="dtitle"><strong>${day.focus}</strong><span>${day.verse}</span></div>${ans>0?`<span class="dprg">${ans}/${day.qs.length}</span>`:''}  <span class="chv ${isO?'open':''}">&#9662;</span></button>`;
+      if(isO) {
+        h+=`<div class="dbody"><div class="vtag ${w.month}">${day.verse}</div>`;
+        day.qs.forEach((q,qi)=>{
+          const k=`w${w.n}-d${day.d}-q${qi}`;
+          const v=ga(w.n,day.d,qi).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+          h+=`<div class="qblk"><div class="qrow"><div class="qnum ${w.month}">${qi+1}</div><p>${q}</p></div><textarea class="abox" rows="3" placeholder="Write your thoughts here..." data-key="${k}" oninput="handleInput(${w.n},${day.d},${qi},this.value)">${v}</textarea></div>`;
+        });
+        if(day.d===6) h+=`<div class="d6note">Day 6 is your reflection and prayer day. Take your time. This is between you and God.</div>`;
+        h+='</div>';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  if(ct==='commentary') {
+    h+=`<div class="ccard"><div class="cchdr"><p>Week ${w.n} Commentary</p><strong>${w.title}</strong></div><div class="ccbody">${w.commentary.map(p=>`<p>${p}</p>`).join('')}</div></div>`;
+  }
+  if(ct==='video') {
+    h+=`<div class="vcard"><div class="vchdr" style="background:linear-gradient(135deg,${mc},${mc}BB)"><p>Recommended for Week ${w.n}</p><h3>${w.video.title}</h3><span>${w.video.channel}</span></div><div class="vcbody"><p>${w.video.note}</p><a class="vlink ${w.month}" href="https://www.youtube.com/results?search_query=${w.video.search}" target="_blank">&#9654; Search on YouTube</a><div class="vtips ${w.month}"><p>As you watch, consider:</p><ul><li>What confirms or deepens what you read in this week's passage?</li><li>What surprised you, challenged you, or opened something up?</li><li>What is one thing from this video you want to bring to God in prayer?</li></ul></div></div></div>`;
+  }
+  h+='<div class="navrow">';
+  if(cw>0) h+=`<button class="nbtn nprev" onclick="goW(${cw-1})">&larr; Week ${WEEKS[cw-1].n}</button>`;
+  if(cw<WEEKS.length-1) h+=`<button class="nbtn nnext" onclick="goW(${cw+1})">Week ${WEEKS[cw+1].n} &rarr;</button>`;
+  h+=`</div><div class="ftag">Week ${w.n} of 12 &middot; ${w.scripture}</div>`;
+  document.getElementById('content').innerHTML=h;
+}
+
+function render(){rnav();rweek();}
+function toggleDay(d){od=od===d?null:d;render();}
+function setTab(t){ct=t;render();}
+function goW(i){cw=i;od=null;ct='questions';render();window.scrollTo(0,0);}
+
+// ── INIT ─────────────────────────────────────────────────────
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    currentUser = session.user;
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+  }
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  document.getElementById('loading-screen').style.display = 'none';
+  if (session) {
+    currentUser = session.user;
+    await showStudy();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>
